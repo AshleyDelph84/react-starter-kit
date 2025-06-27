@@ -3,6 +3,7 @@ import { paymentWebhook } from "./subscriptions";
 import { httpAction } from "./_generated/server";
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
+import { geminiLiveProxy } from "./gemini-live";
 
 export const chat = httpAction(async (ctx, req) => {
   // Extract the `messages` from the body of the request
@@ -96,6 +97,25 @@ http.route({
   path: "/payments/webhook",
   method: "POST",
   handler: paymentWebhook,
+});
+
+// Gemini Live API proxy routes
+http.route({
+  path: "/api/gemini-live",
+  method: "POST",
+  handler: geminiLiveProxy,
+});
+
+http.route({
+  path: "/api/gemini-live",
+  method: "GET", 
+  handler: geminiLiveProxy,
+});
+
+http.route({
+  path: "/api/gemini-live",
+  method: "OPTIONS",
+  handler: geminiLiveProxy,
 });
 
 // Log that routes are configured
