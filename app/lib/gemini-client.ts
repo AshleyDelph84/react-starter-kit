@@ -42,9 +42,12 @@ export class GeminiLiveClient {
   private statusHandlers: Set<(status: string) => void> = new Set();
   private pollingInterval: number | null = null;
 
-  constructor(userId: string, baseUrl: string = '/api/gemini-live') {
+  private ephemeralToken: string | null = null;
+  
+  constructor(userId: string, baseUrl: string = '/api/gemini-live', ephemeralToken?: string) {
     this.userId = userId;
     this.baseUrl = baseUrl;
+    this.ephemeralToken = ephemeralToken || null;
   }
 
   /**
@@ -59,7 +62,10 @@ export class GeminiLiveClient {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId: this.userId }),
+        body: JSON.stringify({ 
+          userId: this.userId,
+          ephemeralToken: this.ephemeralToken 
+        }),
       });
 
       if (!response.ok) {
@@ -100,7 +106,8 @@ export class GeminiLiveClient {
         },
         body: JSON.stringify({
           message,
-          messageType: 'text'
+          messageType: 'text',
+          ephemeralToken: this.ephemeralToken
         }),
       });
 
@@ -134,7 +141,8 @@ export class GeminiLiveClient {
         },
         body: JSON.stringify({
           message: { audioData, mimeType },
-          messageType: 'audio'
+          messageType: 'audio',
+          ephemeralToken: this.ephemeralToken
         }),
       });
 
@@ -278,6 +286,20 @@ export class GeminiLiveClient {
    */
   offStatusChange(handler: (status: string) => void): void {
     this.statusHandlers.delete(handler);
+  }
+
+  /**
+   * Set or update ephemeral token
+   */
+  setEphemeralToken(token: string): void {
+    this.ephemeralToken = token;
+  }
+
+  /**
+   * Get current ephemeral token
+   */
+  get currentEphemeralToken(): string | null {
+    return this.ephemeralToken;
   }
 
   /**

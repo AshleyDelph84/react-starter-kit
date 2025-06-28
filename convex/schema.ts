@@ -40,4 +40,20 @@ export default defineSchema({
   })
     .index("type", ["type"])
     .index("polarEventId", ["polarEventId"]),
+  ephemeralTokens: defineTable({
+    token: v.string(),
+    userId: v.string(),
+    expiresAt: v.number(),
+    sessionsUsed: v.number(),
+    messagesUsed: v.number(),
+    maxSessions: v.number(),
+    maxMessages: v.number(),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    lastUsed: v.number(),
+    deactivatedAt: v.optional(v.number()),
+  })
+    .index("by_token", ["token"])
+    .index("by_user", ["userId"])
+    .index("by_expiration", ["expiresAt"]),
 });

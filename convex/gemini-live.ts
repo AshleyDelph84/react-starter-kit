@@ -1,4 +1,5 @@
 import { httpAction } from "./_generated/server";
+import { api } from "./_generated/api";
 import { GoogleGenAI, Modality } from "@google/genai";
 
 /**
@@ -287,13 +288,33 @@ export const geminiLiveProxy = httpAction(async (ctx, request) => {
     switch (action) {
       case "create_session": {
         // Create new Gemini Live session
-        const { userId } = await request.json();
+        const { userId, ephemeralToken } = await request.json();
         
         if (!userId) {
           return new Response(
             JSON.stringify({ error: "userId is required" }),
             { status: 400, headers: corsHeaders }
           );
+        }
+
+        // Validate ephemeral token if provided
+        if (ephemeralToken) {
+          const tokenValidation = await ctx.runQuery(api.tokens.validateEphemeralToken, {
+            token: ephemeralToken
+          });
+          
+          if (!tokenValidation.isValid) {
+            return new Response(
+              JSON.stringify({ error: `Token validation failed: ${tokenValidation.error}` }),
+              { status: 403, headers: corsHeaders }
+            );
+          }
+          
+          // Update token usage - increment session count
+          await ctx.runMutation(api.tokens.updateTokenUsage, {
+            token: ephemeralToken,
+            incrementSessions: 1
+          });
         }
 
         const newSessionId = generateSessionId();
@@ -346,7 +367,27 @@ export const geminiLiveProxy = httpAction(async (ctx, request) => {
           );
         }
 
-        const { message, messageType = "text" } = await request.json();
+        const { message, messageType = "text", ephemeralToken } = await request.json();
+        
+        // Validate ephemeral token if provided and update message count
+        if (ephemeralToken) {
+          const tokenValidation = await ctx.runQuery(api.tokens.validateEphemeralToken, {
+            token: ephemeralToken
+          });
+          
+          if (!tokenValidation.isValid) {
+            return new Response(
+              JSON.stringify({ error: `Token validation failed: ${tokenValidation.error}` }),
+              { status: 403, headers: corsHeaders }
+            );
+          }
+          
+          // Update token usage - increment message count
+          await ctx.runMutation(api.tokens.updateTokenUsage, {
+            token: ephemeralToken,
+            incrementMessages: 1
+          });
+        }
         
         try {
           if (messageType === "text") {
